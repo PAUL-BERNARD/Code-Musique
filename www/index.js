@@ -1,8 +1,12 @@
 import {memory} from "code-musique/code_musique_bg";
 import * as wasm from "code-musique";
 
+const bpm = 100;
+
+
 const codeArea = document.getElementById("codeArea");
 const playBtn = document.getElementById("playBtn");
+
 
 let audioContext = new AudioContext();
 let bufferSourceNode = new AudioBufferSourceNode(audioContext);
@@ -17,15 +21,20 @@ let audioBuffer = new AudioBuffer({
 bufferSourceNode.buffer = audioBuffer;
 
 codeArea.addEventListener("input", (event)=> {
-    console.log(event.target.value);
-    let time0 = Date.now();
+    let bufferSourceNode = audioContext.createBufferSource();
+    let buffer = new AudioBuffer({
+        length: 44_000 * 60/bpm, 
+        numberOfChannels: 1, 
+        sampleRate: 44000,
+    });
+    bufferSourceNode.buffer = buffer;
+
+
     let result = wasm.compile(event.target.value);
-    console.log(Date.now() - time0);
     let memoire = new Float32Array(memory.buffer, result.pointer, result.size);
-    audioBuffer.copyToChannel(memoire,0);
+    buffer.getChannelData(0).set(memoire);
 
 });
 
 playBtn.addEventListener("click", (event) => {
-    bufferSourceNode.start();
 });
