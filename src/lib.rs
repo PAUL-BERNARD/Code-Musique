@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 mod utils;
 
 use wasm_bindgen::prelude;
@@ -21,7 +23,7 @@ enum Instruction {
 
 #[prelude::wasm_bindgen]
 pub struct PointerAndSize {
-    pub pointer: *const f64,
+    pub pointer: *const f32,
     pub size : usize
 }
 
@@ -31,7 +33,6 @@ pub fn compile(code : &str) -> Result<PointerAndSize,String> {
     
     let parsed_code = parse(code)?;
     let audio_buffer = build_audio_buffer(&parsed_code);
-    //write_buffer(audio_buffer);
 
     Ok(PointerAndSize{pointer:audio_buffer.as_ptr(),size:audio_buffer.len()})
 }
@@ -44,13 +45,14 @@ fn parse(code : &str) -> Result<Instruction,String> {
     }
 }
 
-fn build_audio_buffer(parsed_code : &Instruction) -> Vec<f64> {
+fn build_audio_buffer(parsed_code : &Instruction) -> Vec<f32> {
+    
     let Instruction::Freq(freq) = parsed_code;
     
     let mut buffer = Vec::with_capacity(FREQ_ECH*3);
-    let _2pif : f64 = 2f64*std::f64::consts::PI*(*freq as f64);
+    let _2piTe : f32 = 2f32*std::f32::consts::PI*(*freq as f32)/FREQ_ECH as f32;
     for i in 0..FREQ_ECH*3 {
-        buffer.push(f64::sin(_2pif*(i as f64/FREQ_ECH as f64)));
+        buffer.push(f32::sin(_2piTe*(i as f32)));
     }
 
     buffer
