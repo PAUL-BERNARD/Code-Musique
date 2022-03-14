@@ -4,6 +4,9 @@ import * as wasm from "code-musique";
 const codeArea = document.getElementById("codeArea");
 const playBtn = document.getElementById("playBtn");
 const outputArea = document.getElementById("outputArea");
+const downloadButton = document.getElementById("downloadButton");
+const uploadZone = document.getElementById("uploadZone");
+
 
 const SAMPLING_RATE = 44000;
 
@@ -45,4 +48,27 @@ function parseAndPlay(startTime = 0) {
     event.startTime = startTime+barDuration;
     setTimeout(() => document.dispatchEvent(event), barDuration-100);
 }
+
+downloadButton.addEventListener("click", (event) => {
+    downloadCode();
+})
+
+function downloadCode() {
+    const code = codeArea.value;
+    const date = new Date();
+    const fileName = "codeMusique"+date.toLocaleDateString().replaceAll("/","-") + ".xfzd";
+    const href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(code);
+    downloadMockup.setAttribute('href', href);
+    downloadMockup.setAttribute('download', fileName);
+
+    downloadMockup.click();
+}
+
+uploadZone.addEventListener("change", (event) => {
+    const file = uploadZone.file;
+})
+
+
+
+
 
