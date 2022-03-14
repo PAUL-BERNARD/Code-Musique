@@ -3,3 +3,6 @@
 // that no one else needs to worry about it again.
 import("./index.js")
   .catch(e => console.error("Error importing `index.js`:", e));
+
+import("./style.css")
+  .catch(e => console.error("Error importing `style.css`:", e));

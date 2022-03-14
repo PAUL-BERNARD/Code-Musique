@@ -1,0 +1,15 @@
+#codeArea {
+    width:50vw;
+    height:90vh;
+    margin-left:10px;
+    margin-top : 10px;
+    font-family : 'mono';
+    font-size: larger;
+    color:aliceblue;
+    background-color: midnightblue;
+    resize: none;
+}
+
+body {
+    background-color: midnightblue;
+}
