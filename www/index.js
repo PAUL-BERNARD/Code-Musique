@@ -11,7 +11,7 @@ const uploadZone = document.getElementById("uploadZone");
 const SAMPLING_RATE = 44000;
 
 // Vrai si le code a changé depuis la dernière compilation
-let changedCode = true;
+let isPlaying = false;
 // Numéro de la mesure jouée
 let barStartTime = 0;
 
@@ -19,16 +19,21 @@ let barStartTime = 0;
 let audioContext = new AudioContext();
 
 codeArea.addEventListener("input", (event)=> {
-    changedCode = true;
-    parseAndPlay();
+    if (!isPlaying) {
+        parseAndPlay();
+    }
 });
 
 document.addEventListener("prepareNextBar",(event) => {
+    console.log("prepareNextBar");
     event.startTime;
+    let bufferSourceNode = parse();
+    bufferSourceNode.start();
 });
 
 
-function parseAndPlay(startTime = 0) {
+function parse() {
+    console.log("parse");
     let bufferSourceNode = audioContext.createBufferSource();
     bufferSourceNode.connect(audioContext.destination);
     let result = wasm.compile(codeArea.value);
@@ -38,16 +43,28 @@ function parseAndPlay(startTime = 0) {
         numberOfChannels: 1, 
         sampleRate: SAMPLING_RATE,
     });
-    buffer.getChannelData(0).set(memoire);
+    buffer.getChannelData(0).set(resultData);
     bufferSourceNode.buffer = buffer;
-    bufferSourceNode.start();
+    
 
     // Plan next bar
     const barDuration = result.size/SAMPLING_RATE;
     const event = new Event("prepareNextBar");
     event.startTime = startTime+barDuration;
+    console.log("calling timeout");
     setTimeout(() => document.dispatchEvent(event), barDuration-100);
+
+    return bufferSourceNode;
 }
+
+
+
+
+
+
+
+
+
 
 downloadButton.addEventListener("click", (event) => {
     downloadCode();
@@ -56,7 +73,10 @@ downloadButton.addEventListener("click", (event) => {
 function downloadCode() {
     const code = codeArea.value;
     const date = new Date();
-    const fileName = "codeMusique"+date.toLocaleDateString().replaceAll("/","-") + ".xfzd";
+    const fileName = "codeMusique"+
+        date.toLocaleDateString().replaceAll("/","-")+"-"+
+        date.toLocaleTimeString().replaceAll(":","")+
+        ".xfzd";
     const href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(code);
     downloadMockup.setAttribute('href', href);
     downloadMockup.setAttribute('download', fileName);
@@ -65,9 +85,14 @@ function downloadCode() {
 }
 
 uploadZone.addEventListener("change", (event) => {
-    const file = uploadZone.file;
+    const [file] = uploadZone.files;
+    fileReader.readAsText(file);
 })
 
+const fileReader = new FileReader();
+fileReader.addEventListener("load", () => {
+    codeArea.value = fileReader.result;
+});
 
 
 
