@@ -6,30 +6,42 @@ const playBtn = document.getElementById("playBtn");
 const outputArea = document.getElementById("outputArea");
 const downloadButton = document.getElementById("downloadButton");
 const uploadZone = document.getElementById("uploadZone");
+const stopButton = document.getElementById("stopButton");
 
 
 const SAMPLING_RATE = 44000;
 
 // Vrai si le code a changé depuis la dernière compilation
 let isPlaying = false;
-// Numéro de la mesure jouée
+// Temps de la mesure jouée
 let barStartTime = 0;
 
 
 let audioContext = new AudioContext();
 
 codeArea.addEventListener("input", (event)=> {
+    console.log("isplaying"+isPlaying)
     if (!isPlaying) {
+        isPlaying = true;
         parseAndPlay();
     }
 });
 
+function parseAndPlay() {
+    let bufferSourceNode = parse();
+    bufferSourceNode.start(barStartTime);
+}
+
 document.addEventListener("prepareNextBar",(event) => {
     console.log("prepareNextBar");
     event.startTime;
-    let bufferSourceNode = parse();
-    bufferSourceNode.start();
+    parseAndPlay();
 });
+
+stopButton.addEventListener("click", () => {
+
+})
+
 
 
 function parse() {
@@ -49,10 +61,10 @@ function parse() {
 
     // Plan next bar
     const barDuration = result.size/SAMPLING_RATE;
+    console.log(barDuration);
     const event = new Event("prepareNextBar");
-    event.startTime = startTime+barDuration;
-    console.log("calling timeout");
-    setTimeout(() => document.dispatchEvent(event), barDuration-100);
+    barStartTime = barStartTime+barDuration;
+    setTimeout(() => document.dispatchEvent(event), 1000*barDuration-100);
 
     return bufferSourceNode;
 }

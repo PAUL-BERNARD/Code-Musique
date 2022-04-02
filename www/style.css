@@ -4,7 +4,7 @@
     font-family : 'mono';
     font-size: larger;
     color:midnightblue;
-    background-color: #96a1ff88;
+    background: linear-gradient(0deg, #96a1ffAA 0%, #96a1ffFF 100%);
     resize: none;
     border-radius: 2%;
     padding: 10px;
@@ -13,7 +13,7 @@
 }
 
 body {
-    background-color: aliceblue;
+    background-color:#cfd4ff;
     display: flex;
 }
 
@@ -25,19 +25,48 @@ body {
 #rightPanel {
     flex:1;
     margin:10px;
+}
+
+#outputArea {
+    background-color: #2c69af;
     display: flex;
 }
 
 button, #uploadButton {
-    display: inline-block;
-    background-color: #7b38d8;
+    background-color: #2c69af;
     border-radius: 10px;
-    border: 4px double #cccccc;
     color: #eeeeee;
     text-align: center;
-    font-size: 28px;
+    font-size: 1.2em;
     padding: 20px;
-    width: 200px;
     cursor: pointer;
     margin: 5px;
+    font-weight: 500;
+    font-family: sans-serif;
+}
+
+#controlZone {
+    display: grid;
+    grid-template:
+        "a b" auto
+        "c c" auto;
+}
+
+#downloadButton {
+    grid-area: b;
+}
+
+#uploadButton {
+    grid-area : a;
+}
+
+#volumeSlider {
+    grid-area: c;
+    flex-direction:row;
+    display:flex;
+
+}
+
+.slider {
+    scale: 1.5;
 }
