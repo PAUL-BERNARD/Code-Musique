@@ -3,7 +3,9 @@
 
 use std::{iter::Peekable, str::Chars};
 
-pub(super) enum Token {
+
+#[derive(PartialEq)]
+pub(crate) enum Token {
     //BPM(u32),
     //Signature(u8,u8),
     //FilterName(String),
@@ -40,7 +42,7 @@ impl core::fmt::Debug for Token {
     }
 }
 
-fn tokenizer(code : String) -> Result<Vec<Token>,String> {
+pub(crate) fn tokenizer(code : String) -> Result<Vec<Token>,String> {
     let mut code_iter = code.chars().peekable();
     let mut tokens = Vec::new();
 
