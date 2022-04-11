@@ -1,6 +1,9 @@
 #![allow(non_snake_case)]
 
 mod utils;
+mod code_parser;
+
+use code_parser::lexer;
 
 use wasm_bindgen::prelude;
 
