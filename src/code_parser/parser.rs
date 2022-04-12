@@ -102,7 +102,7 @@ fn parse_blocks(pointer: &mut usize, tokens: &Vec<T>) -> Result<Vec<Block>,Strin
 
     'main_loop : loop {
         match tokens.get(*pointer) {
-            Some(T::LeftABracket | T::String(_)) => blocks.push(parse_block(&mut pointer, tokens)?),
+            Some(T::LeftABracket | T::String(_)) => blocks.push(parse_block(pointer, tokens)?),
             Some(T::RightParenthesis) => break 'main_loop,
             Some(T::NewLine) => *pointer += 1,
             None => break 'main_loop,
@@ -122,32 +122,32 @@ fn parse_block(pointer : &mut usize, tokens: &Vec<T>) -> Result<Block,String> {
 }
 
 fn parse_recblock(pointer : &mut usize, tokens: &Vec<T>) -> Result<RecBlock,String> {
-    let filters = parse_filter_list(&mut pointer, tokens)?;
-    expect(T::LeftParenthesis, tokens[*pointer], &mut pointer)?;
-    let blocks = parse_blocks(&mut pointer, tokens)?;
+    let filters = parse_filter_list(pointer, tokens)?;
+    expect(T::LeftParenthesis, &tokens[*pointer], pointer)?;
+    let blocks = parse_blocks(pointer, tokens)?;
 
     Ok(RecBlock {filters, blocks})
 }
 
 fn parse_instrument(pointer : &mut usize, tokens: &Vec<T>) -> Result<Instrument,String> {
-    let instrument = expect_string(tokens[*pointer],&mut pointer)?;
-    let filters = parse_filter_list(&mut pointer, tokens)?;
-    let notes = parse_notes(&mut pointer, tokens)?;
-    expect(T::NewLine, tokens[*pointer], &mut pointer)?;
+    let instrument = expect_string(&tokens[*pointer],pointer)?;
+    let filters = parse_filter_list(pointer, tokens)?;
+    let mut notes = parse_notes(pointer, tokens)?;
+    expect(T::NewLine, &tokens[*pointer], pointer)?;
 
     Ok(Instrument {filters, instrument, notes})
 }
 
 fn parse_notes(pointer : &mut usize, tokens : &Vec<T>) -> Result<Vec<Note>, String> {
-    expect(T::LeftParenthesis,tokens[*pointer], &mut pointer)?;
+    expect(T::LeftParenthesis,&tokens[*pointer], pointer)?;
     let mut note : Note;
-    let notes = Vec::new();
+    let mut notes = Vec::new();
     'main_loop : loop {
-        if let Ok(note) = parse_note(&mut pointer, tokens) {
+        if let Ok(note) = parse_note(pointer, tokens) {
             notes.push(note);
         }
         else {
-            expect(T::RightParenthesis, tokens[*pointer], &mut pointer)?;
+            expect(T::RightParenthesis, &tokens[*pointer], pointer)?;
             break 'main_loop;
         }
     }
@@ -163,7 +163,7 @@ fn parse_filter_list(pointer : &mut usize, tokens: &Vec<T>) -> Result<Vec<Filter
     let mut filter_list = Vec::new();
     // TODO (moyen sûr)
     'main_loop : while tokens[*pointer] != T::RightABracket {
-        filter_list.push(parse_filter(&mut pointer, tokens)?);
+        filter_list.push(parse_filter(pointer, tokens)?);
         if tokens[*pointer] != T::Comma {
             if tokens[*pointer] == T::RightABracket {
                 break 'main_loop;
@@ -178,9 +178,9 @@ fn parse_filter_list(pointer : &mut usize, tokens: &Vec<T>) -> Result<Vec<Filter
 }
 
 fn parse_filter(pointer : &mut usize, tokens: &Vec<T>) -> Result<Filter,String> {
-    let name = expect_string(tokens[*pointer], &mut pointer)?;
-    expect(T::Colon, tokens[*pointer], &mut pointer)?;
-    let value = expect_value(tokens[*pointer], &mut pointer)?;
+    let name = expect_string(&tokens[*pointer], pointer)?;
+    expect(T::Colon, &tokens[*pointer], pointer)?;
+    let value = expect_value(&tokens[*pointer], pointer)?;
     Ok(Filter {name, value})
 }
 
@@ -195,8 +195,8 @@ fn parse_note(pointer : &mut usize, tokens: &Vec<T>) -> Result<Note,String> {
     }
 }
 
-fn expect(expected_token : T, token : T, pointer : &mut usize) -> Result<(),String> {
-    if expected_token == token {
+fn expect(expected_token : T, token : &T, pointer : &mut usize) -> Result<(),String> {
+    if expected_token == *token {
         *pointer += 1;
         Ok(())
     }
@@ -205,20 +205,20 @@ fn expect(expected_token : T, token : T, pointer : &mut usize) -> Result<(),Stri
     }
 }
 
-fn expect_value(token : T, pointer : &mut usize) -> Result<isize, String> {
+fn expect_value(token : &T, pointer : &mut usize) -> Result<isize, String> {
     if let T::Value(val) = token {
         *pointer += 1;
-        Ok(val)
+        Ok(*val)
     }
     else {
         Err(format!("Expected number value, found {:?}", token))
     }
 }
 
-fn expect_string(token : T, pointer : &mut usize) -> Result<String, String> {
+fn expect_string(token : &T, pointer : &mut usize) -> Result<String, String> {
     if let T::String(val) = token {
         *pointer +=1;
-        Ok(val)
+        Ok(val.clone())
     }
     else {
         Err(format!("Expected string, found {:?}", token))
