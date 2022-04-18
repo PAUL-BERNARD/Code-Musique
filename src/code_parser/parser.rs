@@ -56,7 +56,7 @@ fn parse_axiom(pointer : &mut usize, tokens: &Vec<T>) -> Result<Axiom,String> {
     }
     *pointer += 1;
     // BPM value
-    let mut bpm : u8;
+    let bpm : u8;
     if let T::Value(val) = tokens[*pointer] {
         bpm = val.try_into().unwrap();
     }
@@ -92,7 +92,7 @@ fn parse_axiom(pointer : &mut usize, tokens: &Vec<T>) -> Result<Axiom,String> {
     }
 
 
-    let mut blocks = Vec::new();
+    let blocks = parse_blocks(pointer, tokens)?;
 
     Ok(Axiom {bpm, signature, blocks})
 }
@@ -132,7 +132,7 @@ fn parse_recblock(pointer : &mut usize, tokens: &Vec<T>) -> Result<RecBlock,Stri
 fn parse_instrument(pointer : &mut usize, tokens: &Vec<T>) -> Result<Instrument,String> {
     let instrument = expect_string(&tokens[*pointer],pointer)?;
     let filters = parse_filter_list(pointer, tokens)?;
-    let mut notes = parse_notes(pointer, tokens)?;
+    let notes = parse_notes(pointer, tokens)?;
     expect(T::NewLine, &tokens[*pointer], pointer)?;
 
     Ok(Instrument {filters, instrument, notes})
@@ -140,7 +140,6 @@ fn parse_instrument(pointer : &mut usize, tokens: &Vec<T>) -> Result<Instrument,
 
 fn parse_notes(pointer : &mut usize, tokens : &Vec<T>) -> Result<Vec<Note>, String> {
     expect(T::LeftParenthesis,&tokens[*pointer], pointer)?;
-    let mut note : Note;
     let mut notes = Vec::new();
     'main_loop : loop {
         if let Ok(note) = parse_note(pointer, tokens) {

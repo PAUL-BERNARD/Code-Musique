@@ -2,6 +2,7 @@
 
 mod utils;
 mod code_parser;
+mod synthesis;
 
 use wasm_bindgen::prelude;
 
