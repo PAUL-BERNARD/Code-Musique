@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 #[allow(unused_imports)]
 use micromath::F32Ext;
 use super::AudioBuffer;
-
+use fastrand;
 trait Oscillator {
     // OSCILLATORS
     fn sin_wave(sample_size : usize, frequency : usize) -> Self;
@@ -10,6 +10,7 @@ trait Oscillator {
     fn triangle_wave(sample_size : usize, frequency : usize) -> Self;
     fn square_wave(sample_size : usize, frequency : usize) -> Self;
     fn square_wave_with_value(sample_size : usize, frequency : usize, value : f32) -> Self;
+    fn white_noise(sample_size: usize) -> Self;
 }
 
 impl Oscillator for AudioBuffer {
@@ -78,6 +79,14 @@ impl Oscillator for AudioBuffer {
         buffer
     }
 
-    
+    fn white_noise(sample_size: usize) -> Self {
+        let mut buffer = Vec::with_capacity(sample_size);
+
+        for _i in 0..sample_size {
+            buffer.push(fastrand::f32());
+        }
+
+        buffer
+    }    
 }
 
