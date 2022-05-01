@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 use micromath::F32Ext;
 use super::AudioBuffer;
 use fastrand;
-trait Oscillator {
+pub trait Oscillator {
     // OSCILLATORS
     fn sin_wave(sample_size : usize, frequency : usize) -> Self;
     fn sawtooth_wave(sample_size : usize, frequency : usize) -> Self;

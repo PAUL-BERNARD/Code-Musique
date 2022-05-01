@@ -1,12 +1,13 @@
 use super::AudioBuffer;
 use std::f32::consts::PI;
 
-trait Filter {
+pub trait FilterTrait {
     fn low_pass(&self, cutoff_freq : f32) -> Self;
     fn adsr(&self, duration : f32, attack : f32, decay : f32, sustain : f32, release : f32) -> Self;
+    fn echo(&self, delta : f32, loudness : f32) -> Self;
 }
 
-impl Filter for AudioBuffer {
+impl FilterTrait for AudioBuffer {
     fn low_pass(&self, cutoff_freq : f32) -> Self {
         let mut buffer = Vec::with_capacity(self.len());
 
@@ -50,6 +51,14 @@ impl Filter for AudioBuffer {
         for i in 0..release_s {
             buffer.push((sustain - k * (i as f32))   * self[i]);
         }
+
+        buffer
+    }
+
+    fn echo(&self, delta : f32, loudness : f32) -> AudioBuffer {
+        let mut buffer = Vec::with_capacity(self.len()+(delta*44_000.) as usize);
+
+        // TODO
 
         buffer
     }

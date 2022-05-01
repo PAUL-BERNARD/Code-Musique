@@ -1,43 +1,49 @@
 #![allow(dead_code)]
 
-use std::convert::TryInto;
+use std::{convert::TryInto, fmt::Debug};
 
 use super::lexer::{tokenizer, Token as T};
 
-struct Axiom {
-    bpm : u8,
-    signature : (u8, u8),
-    blocks : Vec<Block>
+#[derive(Debug)]
+pub struct Axiom {
+    pub bpm : u8,
+    pub signature : (u8, u8),
+    pub blocks : Vec<Block>
 }
 
-enum Block {
+#[derive(Debug)]
+pub enum Block {
     Recursive(RecBlock),
     Instrument(Instrument),
 }
 
-struct RecBlock {
-    filters : Vec<Filter>,
-    blocks : Vec<Block>,
+#[derive(Debug)]
+pub struct RecBlock {
+    pub filters : Vec<Filter>,
+    pub blocks : Vec<Block>,
 }
 
-struct Instrument {
-    instrument : String,
-    filters : Vec<Filter>,
-    notes : Vec<Note>
+#[derive(Debug)]
+pub struct Instrument {
+    pub instrument : String,
+    pub filters : Vec<Filter>,
+    pub notes : Vec<Note>
 }
 
 // TODO : string value
-struct Filter {
-    name : String,
-    value : isize, 
+#[derive(Clone, Debug)]
+pub struct Filter {
+    pub name : String,
+    pub value : isize, 
 }
 
-struct Note {
-    pitch : u32,
+#[derive(Debug)]
+pub struct Note {
+    pub pitch : usize,
 }
 
 
-fn parse(code : String) -> Result<Axiom,String> {
+pub fn parse(code : String) -> Result<Axiom,String> {
     let token_list = tokenizer(code)?;
     let axiom = syntactical_analysis(&token_list)?;
 
@@ -71,25 +77,11 @@ fn parse_axiom(pointer : &mut usize, tokens: &Vec<T>) -> Result<Axiom,String> {
     *pointer += 1;
 
     // TIME SIGNATURE
-    let mut signature = (4,4);
-    if let T::Value(den) = tokens[*pointer] {
-        if tokens[*pointer+1] != T::Solidus {
-            match tokens[*pointer+2] {
-                T::Value(nom) => {
-                    signature = (den.try_into().unwrap(),nom.try_into().unwrap());
-                    *pointer += 2;
-                    if tokens[*pointer] != T::NewLine {
-                        return Err(format!("Expected line return, found {:?}",tokens[*pointer]));
-                    }
-                    *pointer += 1;
-                },
-                _ => return Err(format!("Expected signature denominator, found {:?}",tokens[*pointer+2]))
-            }
-        }
-        else {
-            return Err(format!("Expected solidus, found {:?}",tokens[*pointer+1]))
-        }  
-    }
+    let den : u8 = to_u8(expect_value(&tokens[*pointer], pointer)?)?;
+    expect(T::Solidus, &tokens[*pointer], pointer)?;
+    let nom : u8 = to_u8(expect_value(&tokens[*pointer], pointer)?)?;
+    expect(T::NewLine, &tokens[*pointer], pointer)?;
+    let signature = (den,nom);
 
 
     let blocks = parse_blocks(pointer, tokens)?;
@@ -102,7 +94,7 @@ fn parse_blocks(pointer: &mut usize, tokens: &Vec<T>) -> Result<Vec<Block>,Strin
 
     'main_loop : loop {
         match tokens.get(*pointer) {
-            Some(T::LeftABracket | T::String(_)) => blocks.push(parse_block(pointer, tokens)?),
+            Some(T::LeftABracket | T::String(_) | T::LeftParenthesis) => blocks.push(parse_block(pointer, tokens)?),
             Some(T::RightParenthesis) => break 'main_loop,
             Some(T::NewLine) => *pointer += 1,
             None => break 'main_loop,
@@ -115,14 +107,20 @@ fn parse_blocks(pointer: &mut usize, tokens: &Vec<T>) -> Result<Vec<Block>,Strin
 
 fn parse_block(pointer : &mut usize, tokens: &Vec<T>) -> Result<Block,String> {
     match tokens[*pointer] {
-        T::LeftABracket => Ok(Block::Recursive(parse_recblock(pointer, tokens)?)),
+        T::LeftABracket | T::LeftParenthesis => Ok(Block::Recursive(parse_recblock(pointer, tokens)?)),
         T::String(_) => Ok(Block::Instrument(parse_instrument(pointer, tokens)?)),
         _ => Err(format!("Expected left angled-bracket or instrument name (block), found {:?}",tokens[*pointer]))
     }
 }
 
 fn parse_recblock(pointer : &mut usize, tokens: &Vec<T>) -> Result<RecBlock,String> {
-    let filters = parse_filter_list(pointer, tokens)?;
+    let filters;
+    if tokens[*pointer] == T::LeftABracket {
+        filters = parse_filter_list(pointer, tokens)?;
+    }
+    else {
+        filters = vec![];
+    }
     expect(T::LeftParenthesis, &tokens[*pointer], pointer)?;
     let blocks = parse_blocks(pointer, tokens)?;
 
@@ -131,7 +129,13 @@ fn parse_recblock(pointer : &mut usize, tokens: &Vec<T>) -> Result<RecBlock,Stri
 
 fn parse_instrument(pointer : &mut usize, tokens: &Vec<T>) -> Result<Instrument,String> {
     let instrument = expect_string(&tokens[*pointer],pointer)?;
-    let filters = parse_filter_list(pointer, tokens)?;
+    let filters;
+    if tokens[*pointer] == T::LeftABracket {
+        filters = parse_filter_list(pointer, tokens)?;
+    }
+    else {
+        filters = vec![];
+    }
     let notes = parse_notes(pointer, tokens)?;
     expect(T::NewLine, &tokens[*pointer], pointer)?;
 
@@ -141,26 +145,21 @@ fn parse_instrument(pointer : &mut usize, tokens: &Vec<T>) -> Result<Instrument,
 fn parse_notes(pointer : &mut usize, tokens : &Vec<T>) -> Result<Vec<Note>, String> {
     expect(T::LeftParenthesis,&tokens[*pointer], pointer)?;
     let mut notes = Vec::new();
-    'main_loop : loop {
-        if let Ok(note) = parse_note(pointer, tokens) {
-            notes.push(note);
-        }
-        else {
-            expect(T::RightParenthesis, &tokens[*pointer], pointer)?;
-            break 'main_loop;
-        }
+
+    notes.push(parse_note(pointer, tokens)?);
+    while tokens[*pointer] != T::RightParenthesis {
+        expect(T::Comma, &tokens[*pointer], pointer)?;
+        notes.push(parse_note(pointer,tokens)?);
     }
+    *pointer += 1; 
     Ok(notes)
 }
 
 fn parse_filter_list(pointer : &mut usize, tokens: &Vec<T>) -> Result<Vec<Filter>,String> {
-    if tokens[*pointer] != T::LeftABracket {
-        return Err(format!("Expected left angled-bracket, found {:?}",tokens[*pointer]));
-    }
-    *pointer += 1;
+    
+    expect(T::LeftABracket, &tokens[*pointer], pointer)?;
 
     let mut filter_list = Vec::new();
-    // TODO (moyen sûr)
     'main_loop : while tokens[*pointer] != T::RightABracket {
         filter_list.push(parse_filter(pointer, tokens)?);
         if tokens[*pointer] != T::Comma {
@@ -223,3 +222,35 @@ fn expect_string(token : &T, pointer : &mut usize) -> Result<String, String> {
         Err(format!("Expected string, found {:?}", token))
     }
 }
+
+fn to_u8<A>(x : A) -> Result<u8, String> where A: TryInto<u8>, A: Debug, A: Copy {
+    match x.try_into() {
+        Ok(a) => Ok(a),
+        Err(_) => Err(format!("Cannot convert {:?} to an 8-bit integer.",x)),
+    }
+}
+
+
+/* *************TESTS*************** */
+
+
+#[test]
+fn parse_plain() {
+    let plain_code = std::fs::read_to_string("./tests/codebase/plain.xfzd")
+        .expect("Impossible de lire le fichier");
+
+    let axiom = parse(plain_code).unwrap();
+    dbg!(axiom);
+}
+
+#[test]
+fn parse_simple() {
+    let code = std::fs::read_to_string("./tests/codebase/simple_bloc.xfzd")
+        .expect("Impossible de lire le fichier");
+
+    let axiom = parse(code).unwrap();
+    dbg!(axiom);
+}
+
+
+

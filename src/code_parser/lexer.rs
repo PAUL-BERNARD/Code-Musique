@@ -26,11 +26,11 @@ impl core::fmt::Debug for Token {
         match self {
             Self::String(arg0) => f.debug_tuple("Str").field(arg0).finish(),
             Self::Value(arg0) => f.debug_tuple("Num").field(arg0).finish(),
-            Self::BpmKw => write!(f, "`bpm`"),
+            Self::BpmKw => write!(f, "BPM"),
             Self::Solidus => write!(f, "`/`"),
             Self::LeftABracket => write!(f, "`<`"),
             Self::RightABracket => write!(f, "`>`"),
-            Self::NewLine => write!(f, "\n"),
+            Self::NewLine => write!(f, "NewLine"),
             Self::Comma => write!(f, "`,`"),
             Self::LeftParenthesis => write!(f, "`(`"),
             Self::RightParenthesis => write!(f, "`)`"),
@@ -52,10 +52,18 @@ pub(crate) fn tokenizer(code : String) -> Result<Vec<Token>,String> {
             Some(',') => tokens.push(Token::Comma),
             Some(':') => tokens.push(Token::Colon),
             Some('/') => tokens.push(Token::Solidus),
-            Some('\n') => tokens.push(Token::NewLine),
-            Some('1'..='9') => tokens.push(parse_number(&mut code_iter)?),
+            Some('\n') => {
+                if tokens.last() != Some(&Token::NewLine) {
+                    tokens.push(Token::NewLine)
+                }
+            },
+            Some('1'..='9') => {
+                tokens.push(parse_number(&mut code_iter)?);
+                continue;
+            },
             Some('a'..='z' | 'A'..='Z') => {
-                tokens.push(parse_string(&mut code_iter)?)
+                tokens.push(parse_string(&mut code_iter)?);
+                continue;
             },
             Some('\r') => {},
             Some(' ') => {},
@@ -78,8 +86,9 @@ fn parse_number(code_iter : &mut Peekable<Chars>) -> Result<Token, String> {
             Some('0'..='9') => {
                 let digit = c.unwrap().to_digit(10).ok_or("Failed to parse digit")?;
                 number = 10*number + digit as isize;
+                
             }
-            _ => return Ok(Token::Value(number)) 
+            _ => return Ok(Token::Value(number))
         }
         code_iter.next();
     }
@@ -108,3 +117,14 @@ fn parse_string(code_iter : &mut Peekable<Chars>) -> Result<Token, String> {
 
 
 
+/* *************TESTS*************** */
+
+
+#[test]
+fn tokenize_plain() {
+    let plain_code = std::fs::read_to_string("./tests/codebase/plain.xfzd")
+        .expect("Impossible de lire le fichier");
+
+    let tokens = tokenizer(plain_code).unwrap();
+    dbg!(tokens);
+}

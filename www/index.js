@@ -8,7 +8,7 @@ const downloadButton = document.getElementById("downloadButton");
 const uploadZone = document.getElementById("uploadZone");
 const stopButton = document.getElementById("stopButton");
 
-
+const PREVISION_MS = 200;
 const SAMPLING_RATE = 44000;
 
 // Vrai si le code a changé depuis la dernière compilation
@@ -20,7 +20,6 @@ let barStartTime = 0;
 let audioContext = new AudioContext();
 
 codeArea.addEventListener("input", (event)=> {
-    console.log("isplaying"+isPlaying)
     if (!isPlaying) {
         isPlaying = true;
         parseAndPlay();
@@ -33,23 +32,22 @@ function parseAndPlay() {
 }
 
 document.addEventListener("prepareNextBar",(event) => {
-    console.log("prepareNextBar");
     event.startTime;
     parseAndPlay();
 });
 
-stopButton.addEventListener("click", () => {
-
-})
-
-
 
 function parse() {
-    console.log("parse");
     let bufferSourceNode = audioContext.createBufferSource();
     bufferSourceNode.connect(audioContext.destination);
     let result = wasm.compile(codeArea.value);
-    let resultData = new Float32Array(memory.buffer, result.pointer, result.size);
+    let resultData;
+    try {
+        resultData = new Float32Array(memory.buffer, result.pointer, result.size);
+    }
+    catch(error) {
+        // TODO
+    }
     let buffer = new AudioBuffer({
         length: result.size, 
         numberOfChannels: 1, 
@@ -61,10 +59,9 @@ function parse() {
 
     // Plan next bar
     const barDuration = result.size/SAMPLING_RATE;
-    console.log(barDuration);
     const event = new Event("prepareNextBar");
     barStartTime = barStartTime+barDuration;
-    setTimeout(() => document.dispatchEvent(event), 1000*barDuration-100);
+    setTimeout(() => document.dispatchEvent(event), 1000*barDuration-PREVISION_MS);
 
     return bufferSourceNode;
 }
