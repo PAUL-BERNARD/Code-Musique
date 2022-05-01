@@ -57,7 +57,7 @@ pub(crate) fn tokenizer(code : String) -> Result<Vec<Token>,String> {
                     tokens.push(Token::NewLine)
                 }
             },
-            Some('1'..='9') => {
+            Some('0'..='9') => {
                 tokens.push(parse_number(&mut code_iter)?);
                 continue;
             },

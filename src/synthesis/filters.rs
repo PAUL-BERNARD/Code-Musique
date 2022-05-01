@@ -1,9 +1,11 @@
+#![allow(arithmetic_overflow)]
+
 use super::AudioBuffer;
 use std::f32::consts::PI;
 
 pub trait FilterTrait {
     fn low_pass(&self, cutoff_freq : f32) -> Self;
-    fn adsr(&self, duration : f32, attack : f32, decay : f32, sustain : f32, release : f32) -> Self;
+    fn adsr(&self, duration : f32, attack : f32, decay : f32, sustain : f32, release : f32) -> Result<Self,String> where Self: Sized;
     fn echo(&self, delta : f32, loudness : f32) -> Self;
 }
 
@@ -23,12 +25,22 @@ impl FilterTrait for AudioBuffer {
     }
 
     // Attack decay sustain release
-    fn adsr(&self,duration : f32, attack : f32, decay : f32, sustain : f32, release : f32) -> Self {
+    fn adsr(&self,duration : f32, attack : f32, decay : f32, sustain : f32, release : f32) -> Result<Self,String> {
+        
         let attack_s = (attack*44_000.) as usize;
         let decay_s = (decay*44_000.) as usize;
         let release_s = (release*44_000.) as usize;
-        let sustain_s = (duration*44_000.) as usize - attack_s - decay_s;
+        let duration_s = (duration*44_000.) as usize;
 
+        if duration_s < attack_s + decay_s {
+            return Err(format!("Note duration ({}) should be longer than attack and decay time ({})", duration, attack+decay))
+        }
+        let sustain_s = duration_s - attack_s - decay_s;
+
+        if duration_s+release_s > self.len() {
+            return Err(format!("Note duration exceeds buffer size. Should be less than {}s, but is {}s",self.len() as f32 / 44_000.,duration+release))
+        }
+                
         let mut buffer = Vec::with_capacity(attack_s+decay_s+sustain_s+release_s);
 
         // Attack
@@ -38,7 +50,7 @@ impl FilterTrait for AudioBuffer {
         // Decay
         let k = (1. - sustain) / (decay * 44_000.);
         for i in 0..decay_s {
-            buffer.push((1. - k * (i as f32))   * self[i]);
+            buffer.push((1. - k * (i as f32)) * self[i]);
         }
 
         // Sustain
@@ -49,16 +61,19 @@ impl FilterTrait for AudioBuffer {
         // Release
         let k = sustain / release;
         for i in 0..release_s {
-            buffer.push((sustain - k * (i as f32))   * self[i]);
+            buffer.push((sustain - k * (i as f32)) * self[i]);
         }
 
-        buffer
+        Ok(buffer)
     }
 
     fn echo(&self, delta : f32, loudness : f32) -> AudioBuffer {
         let mut buffer = Vec::with_capacity(self.len()+(delta*44_000.) as usize);
-
-        // TODO
+        let delta : usize = (delta * 44_000.) as usize;
+        for i in 0..self.len() {
+            buffer[i] = self[i];
+            buffer[i+delta] = self[i] * loudness;
+        }
 
         buffer
     }

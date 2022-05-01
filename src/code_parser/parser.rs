@@ -57,24 +57,11 @@ fn syntactical_analysis(tokens : &Vec<T>) -> Result<Axiom,String> {
 
 fn parse_axiom(pointer : &mut usize, tokens: &Vec<T>) -> Result<Axiom,String> {
     // BPM
-    if tokens[*pointer] != T::BpmKw {
-        return Err(format!("Expected BPM keyword, found {:?}",tokens[*pointer]));
-    }
-    *pointer += 1;
-    // BPM value
-    let bpm : u8;
-    if let T::Value(val) = tokens[*pointer] {
-        bpm = val.try_into().unwrap();
-    }
-    else {
-        return Err(format!("Expected BPM number, found {:?}",tokens[*pointer]));
-    }
-    *pointer += 1;
+    expect(T::BpmKw, &tokens[*pointer], pointer)?;
 
-    if tokens[*pointer] != T::NewLine {
-        return Err(format!("Expected line return, found {:?}",tokens[*pointer]));
-    }
-    *pointer += 1;
+    // BPM value
+    let bpm = to_u8(expect_value(&tokens[*pointer], pointer)?)?;
+    expect(T::NewLine, &tokens[*pointer], pointer)?;
 
     // TIME SIGNATURE
     let den : u8 = to_u8(expect_value(&tokens[*pointer], pointer)?)?;
@@ -82,7 +69,6 @@ fn parse_axiom(pointer : &mut usize, tokens: &Vec<T>) -> Result<Axiom,String> {
     let nom : u8 = to_u8(expect_value(&tokens[*pointer], pointer)?)?;
     expect(T::NewLine, &tokens[*pointer], pointer)?;
     let signature = (den,nom);
-
 
     let blocks = parse_blocks(pointer, tokens)?;
 

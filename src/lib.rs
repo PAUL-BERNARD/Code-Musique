@@ -39,3 +39,33 @@ pub fn compile(code: &str) -> Result<PointerAndSize, String> {
         size: audio_buffer.len(),
     })
 }
+
+
+/* ********* TESTS ********** */
+
+fn compile_test(code : &str) -> Result<Vec<f32>, String> {
+    let parsed_code = code_parser::parser::parse(code.to_string())?;
+
+    let audio_buffer = build_buffer(parsed_code)?;
+
+    Ok(audio_buffer)
+}
+
+
+#[test]
+fn compile_plain() {
+    let code = std::fs::read_to_string("./tests/codebase/plain.xfzd")
+        .expect("Impossible de lire le fichier");
+
+    let buffer = compile_test(&code).unwrap();
+    dbg!(buffer);
+}
+
+#[test]
+fn compile_simple() {
+    let code = std::fs::read_to_string("./tests/codebase/simple_bloc.xfzd")
+        .expect("Impossible de lire le fichier");
+
+    let buffer = compile_test(&code).unwrap();
+    dbg!(buffer);
+}

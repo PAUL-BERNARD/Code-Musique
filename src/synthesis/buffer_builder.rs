@@ -1,4 +1,5 @@
 use std::convert::TryInto;
+use std::cmp::min;
 
 use crate::code_parser::parser::*;
 
@@ -71,28 +72,26 @@ fn play_instrument_block(context : &mut BarContext, instrument : Instrument, fil
 fn play_note(context : &mut BarContext, note : Note, instrument : &str, filters : &Vec<Filter>, position : usize) -> Result<(), String> {
 
     let sound = match instrument {
-        "a" => play_a(note),
+        "a" => play_a(note)?,
         _ => return Err(format!("Unknown instrument name : {}",instrument))?,
     };
 
     let sound_ = apply_filters(sound, filters)?;
 
     insert_sound(context, sound_, position);
-
-    // TODO
     Ok(())
 }
 
-fn play_a(note : Note) -> AudioBuffer {
+fn play_a(note : Note) -> Result<AudioBuffer,String> {
     let frequency = pitch_to_frequency(note.pitch);
 
-    let buffer = AudioBuffer::square_wave(3_000, frequency);
+    let buffer = AudioBuffer::square_wave(30_000, frequency);
 
     let buffer = buffer.low_pass(3.*frequency as f32);
 
-    let buffer = buffer.adsr(0.1, 0.03, 0.01, 0.7, 1.);
+    let buffer = buffer.adsr(0.1, 0.03, 0.01, 0.7, 1.)?;
 
-    buffer
+    Ok(buffer)
 }
 
 fn pitch_to_frequency(pitch : usize) -> usize {
@@ -128,5 +127,10 @@ fn apply_filter(sound : AudioBuffer, filter : &Filter) -> Result<AudioBuffer, St
 }
 
 fn insert_sound(context : &mut BarContext, sound : AudioBuffer, position : usize) {
+    let bufferlen = context.buffer.len();
+    let start_sample : usize =  bufferlen * position / context.beat_count as usize;
 
+    for i in 0..min(sound.len(), bufferlen-start_sample) {
+        context.buffer[start_sample+i] += sound[i]; 
+    }
 }
