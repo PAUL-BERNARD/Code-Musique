@@ -68,11 +68,13 @@ impl FilterTrait for AudioBuffer {
     }
 
     fn echo(&self, delta : f32, loudness : f32) -> AudioBuffer {
-        let mut buffer = Vec::with_capacity(self.len()+(delta*44_000.) as usize);
-        let delta : usize = (delta * 44_000.) as usize;
+        let multiplier = 1. / (1. + loudness);
+        let submultiplier = loudness / (1. + loudness);
+        let delta : usize = (delta * 44.) as usize;
+        let mut buffer = vec![0.; self.len()+delta];
         for i in 0..self.len() {
-            buffer[i] = self[i];
-            buffer[i+delta] = self[i] * loudness;
+            buffer[i] = self[i] * multiplier;
+            buffer[i+delta] += self[i] * submultiplier;
         }
 
         buffer

@@ -47,7 +47,6 @@ fn compile_test(code : &str) -> Result<Vec<f32>, String> {
     let parsed_code = code_parser::parser::parse(code.to_string())?;
 
     let audio_buffer = build_buffer(parsed_code)?;
-
     Ok(audio_buffer)
 }
 
@@ -67,5 +66,5 @@ fn compile_simple() {
         .expect("Impossible de lire le fichier");
 
     let buffer = compile_test(&code).unwrap();
-    dbg!(buffer);
+    //println!("{:?}",&buffer[87900..87990]);
 }

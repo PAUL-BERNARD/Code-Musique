@@ -16,7 +16,7 @@ pub fn build_buffer(tree : Axiom) -> Result<AudioBuffer, String> {
     // seconds per beat
     let spb = 60. / (tree.bpm as f32);
     let (beat_count, beat_duration) = tree.signature;
-    let buffer : Vec<f32> = Vec::with_capacity((44_000. * spb) as usize * beat_count as usize);
+    let buffer : Vec<f32> = vec![0.;(44_000. * spb) as usize * beat_count as usize];
 
     let mut context = BarContext {
         buffer,
@@ -26,7 +26,6 @@ pub fn build_buffer(tree : Axiom) -> Result<AudioBuffer, String> {
     };
 
     play_blocks(&mut context, tree.blocks, &vec![])?;
-
     Ok(context.buffer)
 }
 
@@ -70,27 +69,27 @@ fn play_instrument_block(context : &mut BarContext, instrument : Instrument, fil
 }
 
 fn play_note(context : &mut BarContext, note : Note, instrument : &str, filters : &Vec<Filter>, position : usize) -> Result<(), String> {
-
     let sound = match instrument {
-        "a" => play_a(note)?,
+        "simple" => play_a(note)?,
         _ => return Err(format!("Unknown instrument name : {}",instrument))?,
     };
 
     let sound_ = apply_filters(sound, filters)?;
 
     insert_sound(context, sound_, position);
+    
     Ok(())
 }
 
 fn play_a(note : Note) -> Result<AudioBuffer,String> {
     let frequency = pitch_to_frequency(note.pitch);
-
-    let buffer = AudioBuffer::square_wave(30_000, frequency);
-
+    
+    let buffer = AudioBuffer::square_wave(35_300, frequency);
+    println!("playa1 {:?}",&buffer[buffer.len()-100..]);
     let buffer = buffer.low_pass(3.*frequency as f32);
-
-    let buffer = buffer.adsr(0.1, 0.03, 0.01, 0.7, 1.)?;
-
+    println!("playa2 {:?}",&buffer[buffer.len()-100..]);
+    let buffer = buffer.adsr(0.5, 0.05, 0.1, 0.7, 0.3)?;
+    println!("playa3 {:?}",&buffer[buffer.len()-100..]);
     Ok(buffer)
 }
 
@@ -119,6 +118,13 @@ fn apply_filter(sound : AudioBuffer, filter : &Filter) -> Result<AudioBuffer, St
             if cutoff < 0 {return Err("Cut-off frequency must be positive !".to_string())}
             let sound_ = sound.low_pass(cutoff as f32);
             
+
+            Ok(sound_)
+        }
+        "echo" => {
+            let delta = filter.value;
+            if delta < 0 {return Err("Delta value must be positive !".to_string())}
+            let sound_ = sound.echo(delta as f32, 0.8);
 
             Ok(sound_)
         }
