@@ -18,7 +18,7 @@ extern "C" {
     fn alert(s: &str);
 }
 
-const FREQ_ECH: usize = 44_000;
+const SAMPLE_RATE: f32 = 44_000.;
 
 #[prelude::wasm_bindgen]
 pub struct PointerAndSize {

@@ -33,7 +33,7 @@ impl Oscillator for AudioBuffer {
         let period = 1. / frequency; 
 
         for i in 0..sample_size {
-            buffer.push(2.*frequency*((i as f32 / 44_000.) % period));
+            buffer.push(2.*frequency*((i as f32 / crate::SAMPLE_RATE) % period));
         }
 
         buffer
@@ -47,7 +47,7 @@ impl Oscillator for AudioBuffer {
         let period = 1. / frequency;
 
         for i in 0..sample_size {
-            buffer.push(if ((i as f32 / 44_000.)%period) > half_period {1.} else {-1.});
+            buffer.push(if ((i as f32 / crate::SAMPLE_RATE)%period) > half_period {1.} else {-1.});
         }
 
         buffer
@@ -62,7 +62,7 @@ impl Oscillator for AudioBuffer {
         let period = 1. / frequency;
 
         for i in 0..sample_size {
-            buffer.push(if ((i as f32 / 44_000.)%period) > half_period {value} else {neg_value});
+            buffer.push(if ((i as f32 / crate::SAMPLE_RATE)%period) > half_period {value} else {neg_value});
         }
 
         buffer
@@ -70,7 +70,7 @@ impl Oscillator for AudioBuffer {
 
     fn triangle_wave(sample_size : usize, frequency : usize) -> Self {
         let mut buffer = Vec::with_capacity(sample_size);
-        let square_buffer = AudioBuffer::square_wave_with_value(sample_size, frequency, 1./44_000.);
+        let square_buffer = AudioBuffer::square_wave_with_value(sample_size, frequency, 1./crate::SAMPLE_RATE);
 
         for i in 0..sample_size {
             buffer.push(buffer.last().unwrap_or(&0.) + square_buffer[i]);

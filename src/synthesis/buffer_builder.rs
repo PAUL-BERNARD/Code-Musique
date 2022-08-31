@@ -16,7 +16,7 @@ pub fn build_buffer(tree : Axiom) -> Result<AudioBuffer, String> {
     // seconds per beat
     let spb = 60. / (tree.bpm as f32);
     let (beat_count, beat_duration) = tree.signature;
-    let buffer : Vec<f32> = vec![0.;(44_000. * spb) as usize * beat_count as usize];
+    let buffer : Vec<f32> = vec![0.;(crate::SAMPLE_RATE * spb) as usize * beat_count as usize];
 
     let mut context = BarContext {
         buffer,
