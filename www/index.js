@@ -1,4 +1,4 @@
-import {memory} from "code-musique/code_musique_bg";
+import { memory } from "code-musique/code_musique_bg.wasm";
 import * as wasm from "code-musique";
 
 const codeArea = document.getElementById("codeArea");
