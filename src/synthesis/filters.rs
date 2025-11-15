@@ -59,7 +59,7 @@ impl FilterTrait for AudioBuffer {
         }
 
         // Release
-        let k = sustain / release;
+        let k = sustain / (release_s as f32);
         for i in 0..release_s {
             buffer.push((sustain - k * (i as f32)) * self[i]);
         }

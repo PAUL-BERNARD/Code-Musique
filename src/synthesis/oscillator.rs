@@ -35,7 +35,7 @@ impl Oscillator for AudioBuffer {
         for i in 0..sample_size {
             buffer.push(2.*frequency*((i as f32 / crate::SAMPLE_RATE) % period));
         }
-
+        
         buffer
     }
 

@@ -3,11 +3,6 @@ use std::{iter::Peekable, str::Chars};
 
 #[derive(PartialEq)]
 pub(crate) enum Token {
-    //BPM(u32),
-    //Signature(u8,u8),
-    //FilterName(String),
-    //FilterValue(String),
-    //RelativeNote(u8),
     String(String),
     Value(isize),
     BpmKw,

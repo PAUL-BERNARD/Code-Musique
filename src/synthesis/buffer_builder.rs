@@ -9,7 +9,7 @@ struct BarContext {
     buffer : AudioBuffer,
     beat_count : u8,
     beat_duration : u8,
-    spb : f32
+    spb : f32,
 }
 
 pub fn build_buffer(tree : Axiom) -> Result<AudioBuffer, String> {

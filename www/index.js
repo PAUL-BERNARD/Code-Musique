@@ -69,12 +69,6 @@ function parse() {
 
 
 
-
-
-
-
-
-
 downloadButton.addEventListener("click", (event) => {
     downloadCode();
 })
