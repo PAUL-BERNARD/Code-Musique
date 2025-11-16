@@ -21,14 +21,20 @@ cargo install wasm-pack
 ```
 
 
-### 🛠️ Build with `wasm-pack build`
+### Build with `wasm-pack build`
 
 ```bash
 wasm-pack build
 ```
 
-### 🔬 Test with `wasm-pack test`
+### Test with `npm start`
 
 ```bash
-wasm-pack test
+cd www/
+npm start
 ```
+
+### Dependencies versions
+
+npm version: 11.6.2
+wasm-pack: 0.11.1
